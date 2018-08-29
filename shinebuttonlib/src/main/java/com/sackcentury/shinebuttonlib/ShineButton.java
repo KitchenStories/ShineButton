@@ -12,6 +12,7 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.DisplayCutout;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -37,7 +38,6 @@ public class ShineButton extends PorterShapeImageView {
 
     DisplayMetrics metrics = new DisplayMetrics();
 
-
     Activity activity;
     ShineView shineView;
     ValueAnimator shakeAnimator;
@@ -59,7 +59,6 @@ public class ShineButton extends PorterShapeImageView {
         super(context, attrs);
         initButton(context, attrs);
     }
-
 
     public ShineButton(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
@@ -103,7 +102,6 @@ public class ShineButton extends PorterShapeImageView {
     public boolean isChecked() {
         return isChecked;
     }
-
 
     public void setBtnColor(int btnColor) {
         this.btnColor = btnColor;
@@ -211,14 +209,12 @@ public class ShineButton extends PorterShapeImageView {
         this.listener = listener;
     }
 
-
     OnButtonClickListener onButtonClickListener;
 
     public void init(Activity activity) {
         this.activity = activity;
         onButtonClickListener = new OnButtonClickListener();
         setOnClickListener(onButtonClickListener);
-
     }
 
     @Override
@@ -235,7 +231,7 @@ public class ShineButton extends PorterShapeImageView {
 
     public void showAnim() {
         if (activity != null) {
-            final ViewGroup rootView = (ViewGroup) activity.findViewById(Window.ID_ANDROID_CONTENT);
+            final ViewGroup rootView = activity.findViewById(Window.ID_ANDROID_CONTENT);
             shineView = new ShineView(activity, this, shineParams);
             rootView.addView(shineView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             doShareAnim();
@@ -246,7 +242,7 @@ public class ShineButton extends PorterShapeImageView {
 
     public void removeView(View view) {
         if (activity != null) {
-            final ViewGroup rootView = (ViewGroup) activity.findViewById(Window.ID_ANDROID_CONTENT);
+            final ViewGroup rootView = activity.findViewById(Window.ID_ANDROID_CONTENT);
             rootView.removeView(view);
         } else {
             Log.e(TAG, "Please init.");
@@ -267,12 +263,9 @@ public class ShineButton extends PorterShapeImageView {
         shakeAnimator.setDuration(500);
         shakeAnimator.setStartDelay(180);
         invalidate();
-        shakeAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                setScaleX((float) valueAnimator.getAnimatedValue());
-                setScaleY((float) valueAnimator.getAnimatedValue());
-            }
+        shakeAnimator.addUpdateListener(valueAnimator -> {
+            setScaleX((float) valueAnimator.getAnimatedValue());
+            setScaleY((float) valueAnimator.getAnimatedValue());
         });
         shakeAnimator.addListener(new Animator.AnimatorListener() {
             @Override
@@ -310,7 +303,7 @@ public class ShineButton extends PorterShapeImageView {
             getLocationInWindow(location);
             Rect visibleFrame = new Rect();
             activity.getWindow().getDecorView().getWindowVisibleDisplayFrame(visibleFrame);
-            realBottomHeight = visibleFrame.height() - location[1];
+            realBottomHeight = visibleFrame.bottom - location[1];
             bottomHeight = metrics.heightPixels - location[1];
         }
     }

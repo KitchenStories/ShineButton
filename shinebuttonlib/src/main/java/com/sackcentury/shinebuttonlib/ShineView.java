@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.WindowManager;
@@ -57,7 +58,6 @@ public class ShineView extends View {
     boolean allowRandomColor = false;
     boolean enableFlashing = false;
 
-
     RectF rectF = new RectF();
     RectF rectFSmall = new RectF();
 
@@ -72,7 +72,7 @@ public class ShineView extends View {
     float clickValue = 0;
     boolean isRun = false;
     private float distanceOffset = 0.2f;
-
+    private boolean hasDisplayCutout = false;
 
     public ShineView(Context context) {
         super(context);
@@ -81,14 +81,11 @@ public class ShineView extends View {
     public ShineView(Context context, final ShineButton shineButton, ShineParams shineParams) {
         super(context);
 
-
         initShineParams(shineParams, shineButton);
-
 
         this.shineAnimator = new ShineAnimator(animDuration, shineDistanceMultiple, clickAnimDuration);
         ValueAnimator.setFrameDelay(FRAME_REFRESH_DELAY);
         this.shineButton = shineButton;
-
 
         paint = new Paint();
         paint.setColor(bigShineColor);
@@ -111,12 +108,9 @@ public class ShineView extends View {
         ValueAnimator.setFrameDelay(FRAME_REFRESH_DELAY);
         clickAnimator.setDuration(clickAnimDuration);
         clickAnimator.setInterpolator(new EasingInterpolator(Ease.QUART_OUT));
-        clickAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                clickValue = (float) valueAnimator.getAnimatedValue();
-                invalidate();
-            }
+        clickAnimator.addUpdateListener(valueAnimator -> {
+            clickValue = (float) valueAnimator.getAnimatedValue();
+            invalidate();
         });
         clickAnimator.addListener(new Animator.AnimatorListener() {
             @Override
@@ -173,6 +167,13 @@ public class ShineView extends View {
         super(context, attrs, defStyleAttr);
     }
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            hasDisplayCutout = getRootWindowInsets().getDisplayCutout() != null;
+        }
+    }
 
     public void showAnimation(ShineButton shineButton) {
         btnWidth = shineButton.getWidth();
@@ -197,26 +198,27 @@ public class ShineView extends View {
                 centerAnimY = visibleFrame.height() - shineButton.getBottomHeight(true) + btnHeight / 2;
             }
         } else {
-            centerAnimY = getMeasuredHeight() - shineButton.getBottomHeight(false) + btnHeight / 2;
-        }
-        shineAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                value = (float) valueAnimator.getAnimatedValue();
-                if (shineSize != 0 && shineSize > 0) {
-                    paint.setStrokeWidth((shineSize) * (shineDistanceMultiple - value));
-                    paintSmall.setStrokeWidth(((float) shineSize / 3 * 2) * (shineDistanceMultiple - value));
-                } else {
-                    paint.setStrokeWidth((btnWidth / 2) * (shineDistanceMultiple - value));
-                    paintSmall.setStrokeWidth((btnWidth / 3) * (shineDistanceMultiple - value));
-                }
-
-
-                rectF.set(centerAnimX - (btnWidth / (3 - shineDistanceMultiple) * value), centerAnimY - (btnHeight / (3 - shineDistanceMultiple) * value), centerAnimX + (btnWidth / (3 - shineDistanceMultiple) * value), centerAnimY + (btnHeight / (3 - shineDistanceMultiple) * value));
-                rectFSmall.set(centerAnimX - (btnWidth / ((3 - shineDistanceMultiple) + distanceOffset) * value), centerAnimY - (btnHeight / ((3 - shineDistanceMultiple) + distanceOffset) * value), centerAnimX + (btnWidth / ((3 - shineDistanceMultiple) + distanceOffset) * value), centerAnimY + (btnHeight / ((3 - shineDistanceMultiple) + distanceOffset) * value));
-
-                invalidate();
+            if (hasDisplayCutout) {
+                centerAnimY = getMeasuredHeight() - shineButton.getBottomHeight(true) + btnHeight / 2;
+            } else {
+                centerAnimY = getMeasuredHeight() - shineButton.getBottomHeight(false) + btnHeight / 2;
             }
+        }
+        shineAnimator.addUpdateListener(valueAnimator -> {
+            value = (float) valueAnimator.getAnimatedValue();
+            if (shineSize != 0 && shineSize > 0) {
+                paint.setStrokeWidth((shineSize) * (shineDistanceMultiple - value));
+                paintSmall.setStrokeWidth(((float) shineSize / 3 * 2) * (shineDistanceMultiple - value));
+            } else {
+                paint.setStrokeWidth((btnWidth / 2) * (shineDistanceMultiple - value));
+                paintSmall.setStrokeWidth((btnWidth / 3) * (shineDistanceMultiple - value));
+            }
+
+
+            rectF.set(centerAnimX - (btnWidth / (3 - shineDistanceMultiple) * value), centerAnimY - (btnHeight / (3 - shineDistanceMultiple) * value), centerAnimX + (btnWidth / (3 - shineDistanceMultiple) * value), centerAnimY + (btnHeight / (3 - shineDistanceMultiple) * value));
+            rectFSmall.set(centerAnimX - (btnWidth / ((3 - shineDistanceMultiple) + distanceOffset) * value), centerAnimY - (btnHeight / ((3 - shineDistanceMultiple) + distanceOffset) * value), centerAnimX + (btnWidth / ((3 - shineDistanceMultiple) + distanceOffset) * value), centerAnimY + (btnHeight / ((3 - shineDistanceMultiple) + distanceOffset) * value));
+
+            invalidate();
         });
         shineAnimator.startAnim(this, centerAnimX, centerAnimY);
         clickAnimator.start();
